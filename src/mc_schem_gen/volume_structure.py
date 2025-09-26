@@ -167,3 +167,84 @@ class VolumeStructure:
                     path = os.path.join(directory, fname)
                     NamedTag(root, name="").save_to(path, compressed=True, little_endian=False)
                     print(f"Saved {path} ({tile_size})")
+
+    def save_nbt_by_block(self, directory: str, base_name: str, dataversion: int = None, max_size: int = 48):
+        os.makedirs(directory, exist_ok=True)
+        size_x, size_y, size_z = self._get_volume_size()
+        nx = (size_x + max_size - 1) // max_size
+        ny = (size_y + max_size - 1) // max_size
+        nz = (size_z + max_size - 1) // max_size
+
+        blocks = ListTag()
+
+        # Section that Creates the Palette
+        palette = ListTag()
+        palette_index = {}
+        palette.append(CompoundTag({"Name": StringTag("minecraft:air")}))
+        palette_index["minecraft:air"] = 0
+        next_index = 1
+        for (x,y,z), block in self._blocks.items():
+            name = getattr(block, "namespaced_name", None)
+            if name is None:
+                name = f"{block.namespace}:{block.base_name}"
+            if name not in palette_index:
+                entry = CompoundTag({"Name": StringTag(name)})
+                if block.properties:
+                    props = CompoundTag()
+                    for k,v in block.properties.items():
+                        props[k] = StringTag(str(v))
+                    entry["Properties"] = props
+                palette.append(entry)
+                palette_index[name] = next_index
+                next_index += 1
+
+        for blockdictionary in palette:
+            block_name = blockdictionary['Name'].py_str
+            single_name = block_name.replace("minecraft:", "")
+            newdirectory = f"{directory}/{single_name}"
+            os.makedirs(newdirectory, exist_ok=True)
+
+            if block_name == "minecraft:air": 
+                continue
+
+            for ix in range(nx):
+                for iy in range(ny):
+                    for iz in range(nz):
+                        x0, y0, z0 = ix*max_size, iy*max_size, iz*max_size
+                        x1, y1, z1 = min(x0+max_size, size_x), min(y0+max_size, size_y), min(z0+max_size, size_z)
+                        tile_size = (x1-x0, y1-y0, z1-z0)
+
+                        root = CompoundTag()
+                        if dataversion:
+                            root["DataVersion"] = IntTag(dataversion)
+                        root["size"] = ListTag([IntTag(tile_size[0]), IntTag(tile_size[1]), IntTag(tile_size[2])])
+
+                        # Blocks
+                        blocks = ListTag()
+                        for (x,y,z), block in self._blocks.items():
+                            if getattr(block, "namespaced_name", None) == (block_name):
+                                continue
+                            if x0 <= x < x1 and y0 <= y < y1 and z0 <= z < z1:
+                                rel = (x-x0, y-y0, z-z0)
+                                name = getattr(block, "namespaced_name", None)
+                                if name is None:
+                                    name = f"{block.namespace}:{block.base_name}"
+                                
+                                state = palette_index[name]
+                                btag = CompoundTag()
+                                btag["state"] = IntTag(state)
+                                btag["pos"] = ListTag([IntTag(rel[0]), IntTag(rel[1]), IntTag(rel[2])])
+                                blocks.append(btag)
+
+                        root["palette"] = palette
+                        root["blocks"] = blocks
+                        root["entities"] = ListTag()
+
+                        # Save
+                        if nx>1 or ny>1 or nz>1 or True:
+                            fname = f"{ix}_{iy}_{iz}.nbt"
+                        else:
+                            fname = f"{base_name}.nbt"
+                        path = os.path.join(newdirectory, fname)
+                        NamedTag(root, name="").save_to(path, compressed=True, little_endian=False)
+                        print(f"Saved {path} ({tile_size})")

@@ -1,6 +1,10 @@
 import numpy as np
+
 from mc_schem_gen import VolumeStructure, read_tiff
+
 from amulet_nbt import load
+
+from mc_schem_gen.volume_structure import VolumeStructure, read_tiff
 
 OUTPUT_DIR = "tests/output/"
 
@@ -41,16 +45,20 @@ def test_tiff():
 
 def test_schem():
     vs = VolumeStructure()
-    vs.add_schem("tests/data/min_cell.schematic")
-    vs.save_nbt(f"{OUTPUT_DIR}/schem_struct", "structure")
-    vs.save_schem(f"{OUTPUT_DIR}/schem_struct.schem")
+    # vs.add_schem("tests/data/min_cell.schematic")
+    vs.add_schem("tests/data/Epithelial Cell Schematic.schematic")
+
+    # vs.save_nbt(f"{OUTPUT_DIR}/schem_struct", "structure")
+    vs.save_nbt_by_block(f"{OUTPUT_DIR}/schem_struct", "structure")
+
+    # vs.save_schem(f"{OUTPUT_DIR}/schem_struct.schem")
     print("Schem NBT file(s) saved to ./output")
     # try to load one of the nbt files
     load(f"{OUTPUT_DIR}/schem_struct/structure_0_0_0.nbt")
     print("Loaded Schem NBT")
 
 if __name__ == "__main__":
-    test_small_volume()
-    test_large_volume()
-    test_tiff()
+    # test_small_volume()
+    # test_large_volume()
+    # test_tiff()
     test_schem()
