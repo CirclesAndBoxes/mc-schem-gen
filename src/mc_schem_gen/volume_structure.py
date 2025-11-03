@@ -222,7 +222,7 @@ class VolumeStructure:
                         # Blocks
                         blocks = ListTag()
                         for (x,y,z), block in self._blocks.items():
-                            if getattr(block, "namespaced_name", None) == (block_name):
+                            if getattr(block, "namespaced_name", None) != (block_name):
                                 continue
                             if x0 <= x < x1 and y0 <= y < y1 and z0 <= z < z1:
                                 rel = (x-x0, y-y0, z-z0)

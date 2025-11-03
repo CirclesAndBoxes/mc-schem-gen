@@ -1,3 +1,4 @@
+import os
 import numpy as np
 
 from mc_schem_gen import VolumeStructure, read_tiff
@@ -57,8 +58,20 @@ def test_schem():
     load(f"{OUTPUT_DIR}/schem_struct/structure_0_0_0.nbt")
     print("Loaded Schem NBT")
 
+def load_in_file():
+    directory_path = "tests/Yeast Cell Wall"
+    directory = os.listdir(directory_path)
+
+    for file in directory:
+        vs = VolumeStructure()
+        vs.add_schem(file)
+        vs.save_nbt_by_block(f"{OUTPUT_DIR}/yeast2", "structure")
+    
+
+
 if __name__ == "__main__":
     # test_small_volume()
     # test_large_volume()
     # test_tiff()
-    test_schem()
+    # test_schem()
+    load_in_file()
